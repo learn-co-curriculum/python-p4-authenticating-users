@@ -151,9 +151,9 @@ would handle saving the logged in user's details in state.
 ## Staying Logged In
 
 Using the wristband analogy, in the example above, we've shown our ID at the
-door (`username`) and gotten our wristband (`session[:user_id]`) from the
+door (`username`) and gotten our wristband (`session['user_id']`) from the
 backend. So our backend has a means of identifying us with each request using
-the session hash.
+the session object.
 
 Our frontend also knows who we are, because our user data was saved in state after
 logging in.
@@ -167,23 +167,18 @@ backend into state when the page first loads.
 Here's how we might accomplish that. First, we need a route to retrieve the user's
 data from the database using the session hash:
 
-```rb
-get "/me", to: "users#show"
-```
+```py
+class CheckSession(Resource):
 
-And a controller action:
+    def get(self):
+        user = User.query.filter(User.id == session.get('user_id')).first()
+        if user:
+            return jsonify(user.to_dict())
+        else:
+            return jsonify({'message': '401: Not Authorized'}), 401
 
-```rb
-class UsersController < ApplicationController
-  def show
-    user = User.find_by(id: session[:user_id])
-    if user
-      render json: user
-    else
-      render json: { error: "Not authorized" }, status: :unauthorized
-    end
-  end
-end
+api.add_resource(CheckSession, '/check_session')
+
 ```
 
 Then, we can try to log the user in from the frontend as soon as the application
@@ -194,7 +189,7 @@ function App() {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    fetch("/me").then((response) => {
+    fetch("/check_session").then((response) => {
       if (response.ok) {
         response.json().then((user) => setUser(user));
       }
@@ -218,18 +213,13 @@ the club.
 
 The log out flow is even simpler. We can add a new route for logging out:
 
-```rb
-delete "/logout", to: "sessions#destroy"
-```
+```py
+class Logout(Resource):
+    session['user_id'] = None
+    return jsonify({'message': '204: No Content'}), 204
 
-Then add a `SessionsController#destroy` method, which will clear the username
-out of the session:
+api.add_resource(Logout, '/logout')
 
-```rb
-def destroy
-  session.delete :user_id
-  head :no_content
-end
 ```
 
 Here's how that might look in the frontend:
@@ -255,108 +245,12 @@ user from state.
 
 ***
 
-## Security Concerns
-
-Cookies are stored as plain text in a user's browser. Therefore, the user can
-see what's in them, and they can set them to anything they want.
-
-If you open the developer console in your browser, you can see the cookies set
-by the current site. In Chrome's console, you can find this under
-`Application > Cookies`. You can delete any cookie you like. For example, if you
-delete your `user_session` cookie on `github.com` and refresh the page, you will
-find that you've been logged out.
-
-You can also edit cookies, for example with [this extension][edit_this_cookie].
-
-This presents a problem for us. If users can edit their `pageviews_remaining`
-cookie, then they can easily give themselves an unlimited amount of page views.
-
-***
-
-## Flask Never Fails!
-
-Fortunately, Flask has a solution to this. Instead of sending our cookies in
-plain text, we can use Flask to **encrypt** and **sign** a special cookie known
-as a session using the `session` module. The `session` module is imported
-from `flask`, and it behaves like a dictionary:
-
-```py
-  session['pageviews_remaining'] = 5
-```
-
-You can store any simple Python object in the session.
-
-By default, Flask manages all session data in a single cookie. It _serializes_
-all the key/value pairs you set with `session`, converting them from a Python
-object into a big string. Whenever you set a key with the `session` module,
-Python updates the value of its session cookie to this big string.
-
-When you set cookies this way, Flask **signs** them to prevent users from
-tampering with them. Your Flask server has a key, configured in
-your app:
-
-```py
-app.secret_key = 'BAD_SECRET_KEY'
-```
-
-The best strategy for generating a good secret key is using the `os` module
-from the command line:
-
-```shell
-$ python -c 'import os; print(os.urandom(16))'
-# => b'_5#y2L"F4Q8z\n\xec]/'
-
-# keep this somewhere safe!
-```
-
-It's guaranteed that given the same message and key, Flask will produce the
-same output. Also, without the key, it is practically impossible to know what
-Flask would return for a given message. That is, signatures can't be forged.
-
-Flask creates a signature for every session cookie it sets, and appends the
-signature to the cookie.
-
-When it receives a cookie, Flask verifies that the signature matches the
-content.
-
-This prevents cookie tampering. If a user tries to edit their cookie and change
-the `pageviews_remaining`, the signature won't match, and Flask will silently
-ignore the cookie and set a new one.
-
-Cryptography is a deep rabbit hole. At this point, you don't need to understand
-the specifics of how cryptography works, just that Flask and other frameworks
-use it to ensure that session data which is set on the server can't be edited by
-users.
-
-***
-
 ## Conclusion
 
-Cookies are foundational for the modern web.
-
-Most sites use cookies, to let their users log in, keep track of their shopping
-carts, or record other ephemeral session data. Almost nobody thinks these are
-bad uses of cookies: nobody really believes that you should have to type in your
-username and password on every page, or that your shopping cart should clear if
-you reload the page.
-
-But cookies let you store data in a user's browser, so by nature, they can be
-used for more controversial endeavors.
-
-For example, Google AdWords sets a cookie and uses that cookie to track what ads
-you've seen and which ones you've clicked on. The tracking information helps
-AdWords decide what ads to show you.
-
-This is why, if you click on an ad, you may find that the ad follows you around
-the internet. It turns out that this behavior is as effective as it is annoying:
-people are far more likely to buy things from ads that they've clicked on once.
-
-This use of cookies worries people and the EU
-[has created legislation around the use of cookies][eu_law].
-
-Cookies, like any technology, are a tool. In the rest of this module, we're going
-to be using them to let users log in. Whether you later want to use them in such
-a way that the EU passes another law is up to you.
+At its base, login is very simple: the user provides you with credentials by
+filling out a form, you verify those credentials and set a token in the
+`session`. In this example, our token was their user ID. We can also log users
+out by removing their user ID from the session.
 
 ***
 
@@ -366,21 +260,25 @@ Before you move on, make sure you can answer the following questions:
 
 <details>
   <summary>
-    <em>1. What do we mean when we say that HTTP is stateless?</em>
+    <em>1. In the login and authentication flow you learned in this lesson for
+        Flask API/React applications, in what two places is authentication
+        information stored?</em>
   </summary>
 
-  <p>Every HTTP request the server receives is independent. New requests do not
-     remember the requests that came before.</p>
+  <p>The session (on the server) and a cookie (in the browser).</p>
 </details>
 <br/>
 
 <details>
   <summary>
-    <em>2. What attribute do we need to set to ensure that data is encrypted in
-        Flask sessions?</em>
+    <em>2. In the login and authentication flow you learned in this lesson, what
+        sequence of events happens if the user refreshes the page?</em>
   </summary>
 
-  <p><code>app.secret_key</code></p>
+  <p>A request is sent to the server at the route corresponding to the current
+     URL. The frontend then sends a request to the server to check if they have
+     an active session. The server sends a response to the frontend, which
+     either redirects them to the desired page or prompts them to log in.</p>
 </details>
 <br/>
 
