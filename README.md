@@ -286,16 +286,5 @@ Before you move on, make sure you can answer the following questions:
 
 ## Resources
 
-- [Introduction to Identity and Access Management (IAM) - auth0](https://auth0.com/docs/get-started/identity-fundamentals/identity-and-access-management)
-- [HTTP RFC Section 9 — Methods][http methods rfc]
-- [RFC 6265 — HTTP State Management Mechanism (the cookie spec)][rfc_cookies]
-- [Session data in Python Flask - pythonbasics.org][flask session]
-- [General Data Protection Regulation][eu_law]
-- [Legal Cookie Requirements][cookie policies]
-
-[http methods rfc]: http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html "HTTP RFC 9 — Method Definitions"
-[rfc_cookies]: http://tools.ietf.org/html/rfc6265 "HTTP State Management Mechanism"
-[edit_this_cookie]: https://chrome.google.com/webstore/detail/editthiscookie/fngmhnnpilhplaeedifhccceomclgfbg?hl=en
-[flask session]: https://pythonbasics.org/flask-sessions/
-[eu_law]: https://en.wikipedia.org/wiki/General_Data_Protection_Regulation
-[cookie policies]: https://termly.io/resources/templates/cookie-policy-template/#are-you-legally-required-to-have-a-cookie-policy
+- [What is Authentication? - auth0](https://auth0.com/intro-to-iam/what-is-authentication)
+- [API - Flask: class flask.session](https://flask.palletsprojects.com/en/2.2.x/api/#flask.session)
