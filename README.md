@@ -215,8 +215,10 @@ The log out flow is even simpler. We can add a new route for logging out:
 
 ```py
 class Logout(Resource):
-    session['user_id'] = None
-    return jsonify({'message': '204: No Content'}), 204
+    
+    def delete(self): # just add this line!
+        session['user_id'] = None
+        return jsonify({'message': '204: No Content'}), 204
 
 api.add_resource(Logout, '/logout')
 
