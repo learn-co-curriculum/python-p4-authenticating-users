@@ -6,13 +6,13 @@
 - Understand how websites use login to authenticate users.
 - Follow REST conventions for handling session data.
 
-***
+---
 
 ## Key Vocab
 
-- **Identity and Access Management (IAM)**: a subfield of software engineering that
-  focuses on users, their attributes, their login information, and the resources
-  that they are allowed to access.
+- **Identity and Access Management (IAM)**: a subfield of software engineering
+  that focuses on users, their attributes, their login information, and the
+  resources that they are allowed to access.
 - **Authentication**: proving one's identity to an application in order to
   access protected information; logging in.
 - **Authorization**: allowing or disallowing access to resources based on a
@@ -22,7 +22,7 @@
 - **Cookie**: data from a web application that is stored by the browser. The
   application can retrieve this data during subsequent sessions.
 
-***
+---
 
 ## Introduction
 
@@ -31,7 +31,7 @@ We've covered how cookies can be used to store data in a user's browser.
 One of the most common uses of cookies is for login. In this lesson, we'll cover
 how to use the Flask session to log users in.
 
-***
+---
 
 ## Authentication
 
@@ -56,7 +56,7 @@ The term we use to describe this process is **authentication**. When we talk
 about authentication in our applications, we are describing how our application
 can **confirm that our users are who they say they are**.
 
-***
+---
 
 ## How This Looks in Flask
 
@@ -70,14 +70,15 @@ The flow will look like this:
 - The user submits the form, POSTing to `/login` on the Flask backend.
 - In the login view we set a cookie on the user's browser by writing their user
   ID into the session hash.
-- Thereafter, the user is logged in. `session['user_id']` will hold their user ID.
+- Thereafter, the user is logged in. `session['user_id']` will hold their user
+  ID.
 
 Let's write a view to handle our login route. This class will handle `POST`
 requests to `/login`:
 
 ```py
 class Login(Resource):
-    
+
     def get(self):
         ...
 
@@ -88,8 +89,8 @@ api.add_resource(Login, '/login')
 
 ```
 
-> **NOTE: Check out the REST module for a reminder on setting up CRUD APIs
-> with Flask RESTful! We left out the imports and whatnot here.**
+> **NOTE: Check out the REST module for a reminder on setting up CRUD APIs with
+> Flask RESTful! We left out the imports and whatnot here.**
 
 Typically, your `post()` method would look up a user in the database, verify
 their login credentials, and then store the authenticated user's id in the
@@ -102,7 +103,7 @@ class Login(Resource):
         user = User.query.filter(
             User.username == request.get_json()['username']
         ).first()
-        
+
         session['user_id'] = user.id
         return user.to_dict()
 
@@ -143,10 +144,10 @@ function Login({ onLogin }) {
 }
 ```
 
-When the user submits the form, they'll be logged in! Our `onLogin` callback function
-would handle saving the logged in user's details in state.
+When the user submits the form, they'll be logged in! Our `onLogin` callback
+function would handle saving the logged in user's details in state.
 
-***
+---
 
 ## Staying Logged In
 
@@ -155,8 +156,8 @@ door (`username`) and gotten our wristband (`session['user_id']`) from the
 backend. So our backend has a means of identifying us with each request using
 the session object.
 
-Our frontend also knows who we are, because our user data was saved in state after
-logging in.
+Our frontend also knows who we are, because our user data was saved in state
+after logging in.
 
 What happens now if we leave the club and try to come back in, by refreshing the
 page on the frontend? Well, our **frontend** doesn't know who we are any more,
@@ -164,8 +165,8 @@ since we lose our frontend state after refreshing the page. Our **backend** does
 know who we are though — so we need a way of getting the user data from the
 backend into state when the page first loads.
 
-Here's how we might accomplish that. First, we need a route to retrieve the user's
-data from the database using the session hash:
+Here's how we might accomplish that. First, we need a route to retrieve the
+user's data from the database using the session hash:
 
 ```py
 class CheckSession(Resource):
@@ -207,7 +208,7 @@ function App() {
 This is the equivalent of letting someone use their wristband to come back into
 the club.
 
-***
+---
 
 ## Logging Out
 
@@ -215,7 +216,7 @@ The log out flow is even simpler. We can add a new route for logging out:
 
 ```py
 class Logout(Resource):
-    
+
     def delete(self): # just add this line!
         session['user_id'] = None
         return {'message': '204: No Content'}, 204
@@ -245,7 +246,51 @@ function Navbar({ onLogout }) {
 The `onLogout` callback function would handle removing the information about the
 user from state.
 
-***
+---
+
+## Cookies, Sessions, and Proxies
+
+Since they can't run on the same port, we normally run our `React` client on
+`http://localhost:3000` and `Flask` server on `http://localhost:5555` . We've
+seen how to enable `CORS` in the server to receive requests from other origins
+(different ports mean different origins). However, by default `CORS` does not
+allow cookies to be submitted across origins due to potential security
+implications . Thus while `CORS` enables the server to accept requests from
+other origins, the browser is not actually storing the cookies/sessions
+generated by the server. Since a session is stored as a cookie, this presents a
+challenge to our ability to authenticate users.
+
+The simplest solution is to use a proxy. Recall a proxy field must be specified
+in `package.json`:
+
+```
+"proxy": "http://localhost:5555"
+```
+
+We've seen how a proxy let's us write `fetch` requests in our `React` frontend
+that don't include the backend domain. Thus, we can pass `"/login"` as the first
+parameter to `fetch` rather than `"http://localhost:5555/login"`.
+
+```jsx
+function Login({ onLogin }) {
+  const [username, setUsername] = useState("");
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    fetch("/login", {
+      ...
+    })
+    ...
+```
+
+The proxy also let's us get around the `CORS` cookie issue. Rather than the
+browser sending a request to the server directly, the proxy acts as a bridge to
+send the request to the target URL `http://localhost:5555/login`. The server
+sends its response back through the proxy. The proxy makes it appear as if the
+client request and server response were from the same origin, thus allowing us
+to use cookies and sessions for user authorization.
+
+---
 
 ## Conclusion
 
@@ -254,7 +299,7 @@ filling out a form, you verify those credentials and set a token in the
 `session`. In this example, our token was their user ID. We can also log users
 out by removing their user ID from the session.
 
-***
+---
 
 ## Check For Understanding
 
@@ -284,7 +329,7 @@ Before you move on, make sure you can answer the following questions:
 </details>
 <br/>
 
-***
+---
 
 ## Resources
 
