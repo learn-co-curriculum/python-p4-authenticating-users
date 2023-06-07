@@ -285,10 +285,10 @@ function Login({ onLogin }) {
 
 The proxy also let's us get around the `CORS` cookie issue. Rather than the
 browser sending a request to the server directly, the proxy acts as a bridge to
-send the request to the target URL `http://localhost:5555/login`. The server
-sends its response back through the proxy. The proxy makes it appear as if the
-client request and server response were from the same origin, thus allowing us
-to use cookies and sessions for user authorization.
+send the request to `http://localhost:5555/login`. The server sends its response
+back through the proxy. The proxy makes it appear as if the client request and
+server response were from the same origin, thus allowing us to use cookies and
+sessions for user authorization.
 
 ---
 
